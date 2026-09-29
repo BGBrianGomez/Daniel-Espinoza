@@ -475,7 +475,7 @@ footer { border-color: #ed1c2435; background: #080908; }
   min-height: 130px;
   border: 1px solid #ed1c2437;
   color: #ed1c24;
-  content: "VIDEO EN PANTALLA Â· ENLACE PENDIENTE";
+  content: "VIDEO EN PANTALLA | ENLACE PENDIENTE";
   background: radial-gradient(ellipse at 50% 55%, #ed1c2418, transparent 42%),
     radial-gradient(circle, #ed1c2422 1px, transparent 1.5px), #080908;
   background-size: auto, 14px 14px, auto;
