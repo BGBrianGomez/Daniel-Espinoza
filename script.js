@@ -86,6 +86,10 @@ function getInlineVideoUrl(value) {
       const id = url.searchParams.get("v") || url.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1];
       return id ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}` : null;
     }
+    if (host === "instagram.com") {
+      const reelId = url.pathname.match(/^\/reel\/([^/]+)/)?.[1];
+      return reelId ? `https://www.instagram.com/reel/${encodeURIComponent(reelId)}/embed/` : null;
+    }
     if (host === "vimeo.com" || host === "player.vimeo.com") {
       const id = url.pathname.match(/\/(?:video\/)?(\d+)/)?.[1];
       return id ? `https://player.vimeo.com/video/${encodeURIComponent(id)}` : null;
@@ -97,17 +101,51 @@ function getInlineVideoUrl(value) {
 }
 
 document.querySelectorAll("[data-video-slot][data-video-src]").forEach((slot) => {
-  const embedUrl = getInlineVideoUrl(slot.dataset.videoSrc);
-  if (!embedUrl) return;
+  const videoSrc = slot.dataset.videoSrc;
+  const isLocalVideo = /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(videoSrc);
+  const embedUrl = isLocalVideo ? null : getInlineVideoUrl(videoSrc);
+  if (!isLocalVideo && !embedUrl) return;
 
-  const iframe = document.createElement("iframe");
-  iframe.className = "video-player";
-  iframe.src = embedUrl;
-  iframe.title = slot.dataset.videoTitle || slot.querySelector("strong")?.textContent || "Video de la academia";
-  iframe.loading = "lazy";
-  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-  iframe.referrerPolicy = "strict-origin-when-cross-origin";
-  iframe.allowFullscreen = true;
-  slot.insertBefore(iframe, slot.firstChild);
+  const createPlayer = () => {
+    if (isLocalVideo) {
+      const video = document.createElement("video");
+      video.className = "video-player";
+      video.src = videoSrc;
+      video.title = slot.dataset.videoTitle || slot.querySelector("strong")?.textContent || "Video de la academia";
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.setAttribute("aria-label", video.title);
+      return video;
+    }
+
+    const iframe = document.createElement("iframe");
+    iframe.className = "video-player";
+    iframe.src = embedUrl;
+    iframe.title = slot.dataset.videoTitle || slot.querySelector("strong")?.textContent || "Video de la academia";
+    iframe.loading = "lazy";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+    iframe.allowFullscreen = true;
+    return iframe;
+  };
+
+  const posterButton = slot.querySelector(".educator-poster");
+  if (posterButton) {
+    posterButton.addEventListener("click", () => {
+      const posterHeight = posterButton.getBoundingClientRect().height;
+      const iframe = createPlayer();
+      iframe.style.height = `${posterHeight}px`;
+      slot.replaceChildren(iframe);
+      slot.classList.remove("has-poster");
+      slot.classList.add("has-video-player");
+      if (iframe instanceof HTMLVideoElement) {
+        iframe.play().catch(() => {});
+      }
+    }, { once: true });
+    return;
+  }
+
+  slot.insertBefore(createPlayer(), slot.firstChild);
   slot.classList.add("has-video-player");
 });
