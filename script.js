@@ -5,13 +5,13 @@ if (menuButton && menu) {
   const closeMenu = () => {
     menu.classList.remove("is-open");
     menuButton.setAttribute("aria-expanded", "false");
-    menuButton.setAttribute("aria-label", "Abrir menú");
+    menuButton.setAttribute("aria-label", "Abrir menÃº");
   };
 
   menuButton.addEventListener("click", () => {
     const isOpen = menu.classList.toggle("is-open");
     menuButton.setAttribute("aria-expanded", String(isOpen));
-    menuButton.setAttribute("aria-label", isOpen ? "Cerrar menú" : "Abrir menú");
+    menuButton.setAttribute("aria-label", isOpen ? "Cerrar menÃº" : "Abrir menÃº");
   });
 
   menu.addEventListener("click", (event) => {
@@ -111,6 +111,7 @@ document.querySelectorAll("[data-video-slot][data-video-src]").forEach((slot) =>
       const video = document.createElement("video");
       video.className = "video-player";
       video.src = videoSrc;
+      if (slot.dataset.videoPoster) video.poster = slot.dataset.videoPoster;
       video.title = slot.dataset.videoTitle || slot.querySelector("strong")?.textContent || "Video de la academia";
       video.controls = true;
       video.playsInline = true;
@@ -121,7 +122,8 @@ document.querySelectorAll("[data-video-slot][data-video-src]").forEach((slot) =>
 
     const iframe = document.createElement("iframe");
     iframe.className = "video-player";
-    iframe.src = embedUrl;
+    iframe.src = `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=0`;
+    iframe.dataset.playingSrc = `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=1`;
     iframe.title = slot.dataset.videoTitle || slot.querySelector("strong")?.textContent || "Video de la academia";
     iframe.loading = "lazy";
     iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
@@ -130,22 +132,36 @@ document.querySelectorAll("[data-video-slot][data-video-src]").forEach((slot) =>
     return iframe;
   };
 
-  const posterButton = slot.querySelector(".educator-poster");
-  if (posterButton) {
-    posterButton.addEventListener("click", () => {
-      const posterHeight = posterButton.getBoundingClientRect().height;
-      const iframe = createPlayer();
-      iframe.style.height = `${posterHeight}px`;
-      slot.replaceChildren(iframe);
-      slot.classList.remove("has-poster");
-      slot.classList.add("has-video-player");
-      if (iframe instanceof HTMLVideoElement) {
-        iframe.play().catch(() => {});
-      }
-    }, { once: true });
-    return;
-  }
+  const shell = document.createElement("div");
+  shell.className = "video-player-shell video-preview";
+  shell.setAttribute("data-video-preview", "");
 
-  slot.insertBefore(createPlayer(), slot.firstChild);
+  const player = createPlayer();
+  if (isLocalVideo) {
+    player.controls = false;
+    player.addEventListener("loadeddata", () => shell.classList.add("video-frame-ready"), { once: true });
+  }
+  shell.append(player);
+
+  const playButton = document.createElement("button");
+  playButton.className = "video-center-play";
+  playButton.type = "button";
+  playButton.setAttribute("aria-label", `Reproducir ${slot.dataset.videoTitle || "video"}`);
+  playButton.innerHTML = '<span aria-hidden="true">▶</span>';
+  playButton.addEventListener("click", () => {
+    shell.classList.remove("video-preview");
+    slot.classList.add("has-video-player");
+    if (isLocalVideo) {
+      player.controls = true;
+      player.play().catch(() => {});
+    } else {
+      player.src = player.dataset.playingSrc;
+    }
+    playButton.remove();
+  }, { once: true });
+  shell.append(playButton);
+
+  slot.replaceChildren(shell);
   slot.classList.add("has-video-player");
 });
+
