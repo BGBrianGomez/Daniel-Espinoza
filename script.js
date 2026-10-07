@@ -1,4 +1,4 @@
-const menuButton = document.querySelector(".menu-toggle");
+﻿const menuButton = document.querySelector(".menu-toggle");
 const menu = document.querySelector("#main-links");
 
 if (menuButton && menu) {
@@ -164,4 +164,3 @@ document.querySelectorAll("[data-video-slot][data-video-src]").forEach((slot) =>
   slot.replaceChildren(shell);
   slot.classList.add("has-video-player");
 });
-

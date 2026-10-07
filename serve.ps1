@@ -21,17 +21,25 @@ try {
       $relativePath = [Uri]::UnescapeDataString(($requestedPath.Split('?')[0]).TrimStart('/'))
       if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = 'index.html' }
 
-      if ($relativePath -notin $allowedFiles) {
+      $filePath = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+      $rootPrefix = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+      $isSiteFile = $relativePath -in $allowedFiles
+      $isImageAsset = $relativePath -match '^images[\\/]' -and [System.IO.Path]::GetExtension($relativePath).ToLowerInvariant() -in @('.mp4', '.jpeg', '.jpg', '.png', '.webp')
+      if (-not $filePath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or (-not $isSiteFile -and -not $isImageAsset) -or -not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
         $status = '404 Not Found'
         $contentType = 'text/plain; charset=utf-8'
         $body = [System.Text.Encoding]::UTF8.GetBytes('Not found')
       } else {
-        $filePath = Join-Path $root $relativePath
         $body = [System.IO.File]::ReadAllBytes($filePath)
         $status = '200 OK'
         $contentType = switch ([System.IO.Path]::GetExtension($filePath)) {
           '.css' { 'text/css; charset=utf-8' }
           '.js' { 'text/javascript; charset=utf-8' }
+          '.mp4' { 'video/mp4' }
+          '.jpeg' { 'image/jpeg' }
+          '.jpg' { 'image/jpeg' }
+          '.png' { 'image/png' }
+          '.webp' { 'image/webp' }
           default { 'text/html; charset=utf-8' }
         }
       }
