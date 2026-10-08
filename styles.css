@@ -902,3 +902,10 @@ body { font-size: 16px; line-height: 1.7; }
   .educator-card { padding: 16px; }
   .educator-card-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
 }
+
+
+/* Keep the welcome heading clear of the ticker on shorter desktop viewports. */
+.intro.section-pad { padding-top: 144px; }
+@media (max-width: 680px) {
+  .intro.section-pad { padding-top: 96px; }
+}
